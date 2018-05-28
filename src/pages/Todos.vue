@@ -7,12 +7,13 @@
     <div class="main">
         <input type="checkbox" class="toggle-all" v-model="allDone">
         <ul class="todo-list">
-            <li class="todo" v-for="todo in filteredTodos" :class="{completed: todo.completed}">
+            <li class="todo" v-for="todo in filteredTodos" :class="{completed: todo.completed, editing: todo === editing}">
                 <div class="view">
                     <input type="checkbox" v-model="todo.completed" class="toggle">
-                    <label for="">{{ todo.name }}</label>
+                    <label @dblclick="editTodo(todo)">{{ todo.name }}</label>
                     <button class="destroy" @click.prevent="deleteTodo(todo)"></button>
                 </div>
+				<input type="text" class="edit" v-model="todo.name" @keyup.enter="doneEdit()" @blur="doneEdit()" @keyup.esc="cancelEdit()" v-focus="todo === editing">
             </li>
         </ul>
     </div>
@@ -29,11 +30,14 @@
                 <a href="#" :class="{selected: filter === 'done'}" @click.prevent="filter = 'done'">Faites</a>
             </li>
         </ul>
+		<button class="clear-completed" v-show="completed" @click="deleteCompleted()">Supprimer les tâches finies</button>
     </footer>
 </section>
 </template>
 
 <script>
+import Vye from 'vue';
+
 export default {
   name: 'Todos',
   data () {
@@ -43,12 +47,17 @@ export default {
             completed: false
         }],
         newTodo: '',
+		oldTodo: '',
         filter: 'all',
+		editing: null
     }
   },
   computed: {
       remaining() {
           return this.todos.filter(todo => !todo.completed).length;
+      },
+      completed() {
+          return this.todos.filter(todo => todo.completed).length;
       },
       filteredTodos () {
           if(this.filter === 'todo') {
@@ -84,7 +93,30 @@ export default {
       },
       deleteTodo (todo) {
           this.todos = this.todos.filter(i => i !== todo);
-      }
+      },
+	  deleteCompleted() {
+		  this.todos = this.todos.filter(todo => !todo.completed);
+	  },
+	  editTodo (todo) {
+		  this.editing = todo;
+		  this.oldTodo = todo.name;
+	  },
+	  doneEdit () {
+		  this.editing = null;
+	  },
+	  cancelEdit() {
+		  this.editing.name = this.oldTodo;
+		  this.doneEdit();
+	  }
+  },
+  directives: {
+	  focus (el, value) {
+		  if (value) {
+			  Vue.nextTick(() => {
+				  el.focus();
+			  })			  
+		  }
+	  }
   }
 }
 </script>
